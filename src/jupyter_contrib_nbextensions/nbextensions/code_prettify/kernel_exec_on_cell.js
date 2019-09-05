@@ -135,6 +135,7 @@ define([
             indices = Jupyter.notebook.get_selected_cells_indices();
         }
         var kernel_config = this.get_kernel_config();
+        var promises = [];
         for (var ii = 0; ii < indices.length; ii++) {
             var cell_index = indices[ii];
             var cell = Jupyter.notebook.get_cell(cell_index);
@@ -143,8 +144,9 @@ define([
             }
             // IIFE because otherwise cell_index & cell are passed by reference
             var callbacks = this.construct_cell_callbacks(cell_index, cell);
-            this.autoformat_text(cell.get_text(), kernel_config).then(callbacks[0], callbacks[1]);
+            promises.push(this.autoformat_text(cell.get_text(), kernel_config).then(callbacks[0], callbacks[1]));
         }
+        return promises;
     };
 
     KernelExecOnCells.prototype.autoformat_text = function(text, kernel_config) {
@@ -236,14 +238,14 @@ define([
             help: that.cfg.kbd_shortcut_text + ' selected cell(s)',
             help_index: 'yf',
             icon: that.cfg.button_icon,
-            handler: function(evt) { that.autoformat_cells(); },
+            handler: function(evt) { return that.autoformat_cells(); },
         };
         actions.process_all = {
             help: that.cfg.kbd_shortcut_text + " the whole notebook",
             help_index: 'yf',
             icon: that.cfg.button_icon,
             handler: function(evt) {
-                that.autoformat_cells(Jupyter.notebook.get_cells().map(function (cell, idx) { return idx; }));
+                return that.autoformat_cells(Jupyter.notebook.get_cells().map(function (cell, idx) { return idx; }));
             },
         };
 
